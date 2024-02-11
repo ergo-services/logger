@@ -10,6 +10,8 @@ Extra library of loggers for the Ergo Framework 3.0 (and above)
 Enables colorized output of log messages. Highlights log levels, values of `gen.Atom`, `gen.PID`, `gen.ProcessID`, `gen.Alias`, `gen.Ref`, and `gen.Event`.
 Don't forget to disable the default logger in order to get rid of duplicate log messages on stdout.
 
+![image](https://github.com/ergo-services/logger/assets/118860/2570151a-a4ce-4e40-97ee-73a58956bb0f)
+
 **Warning**: not intended to be used for intensive logging.
 
 Doc: https://docs.ergo.services/extra-library/loggers/colored
