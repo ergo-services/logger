@@ -21,7 +21,7 @@ func init() {
 }
 
 func CreateLogger(options Options) (gen.LoggerBehavior, error) {
-	var c colored
+	var c logger
 
 	c.format = options.TimeFormat
 
@@ -54,7 +54,7 @@ type Options struct {
 	ShortLevelName bool
 }
 
-type colored struct {
+type logger struct {
 	out    io.Writer
 	format string
 
@@ -66,13 +66,13 @@ type colored struct {
 	levelDebug   string
 }
 
-func (c *colored) Log(message gen.MessageLog) {
+func (l *logger) Log(message gen.MessageLog) {
 	var level, t, source string
 
-	if c.format == "" {
+	if l.format == "" {
 		t = fmt.Sprintf("%d", message.Time.UnixNano())
 	} else {
-		t = message.Time.Format(c.format)
+		t = message.Time.Format(l.format)
 	}
 
 	switch src := message.Source.(type) {
@@ -90,18 +90,18 @@ func (c *colored) Log(message gen.MessageLog) {
 
 	switch message.Level {
 	case gen.LogLevelInfo:
-		level = c.levelInfo
+		level = l.levelInfo
 	case gen.LogLevelWarning:
-		level = c.levelWarning
+		level = l.levelWarning
 	case gen.LogLevelError:
-		level = c.levelError
+		level = l.levelError
 	case gen.LogLevelPanic:
-		level = c.levelPanic
+		level = l.levelPanic
 	case gen.LogLevelDebug:
-		level = c.levelDebug
+		level = l.levelDebug
 	case gen.LogLevelTrace:
 		msg := fmt.Sprintf(message.Format, message.Args...)
-		colorFaint.Printf("%s %s %s: %s\n", t, c.levelTrace, source, msg)
+		colorFaint.Printf("%s %s %s: %s\n", t, l.levelTrace, source, msg)
 		return
 
 	default:
@@ -133,4 +133,4 @@ func (c *colored) Log(message gen.MessageLog) {
 	fmt.Printf("%s %s %s: %s\n", colorFaint.Sprintf("%s", t), level, source, msg)
 }
 
-func (c *colored) Terminate() {}
+func (l *logger) Terminate() {}

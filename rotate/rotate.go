@@ -15,7 +15,7 @@ import (
 )
 
 func CreateLogger(options Options) (gen.LoggerBehavior, error) {
-	var r rotate
+	var l logger
 
 	if options.Path == "" {
 		dir := filepath.Dir(os.Args[0])
@@ -42,44 +42,44 @@ func CreateLogger(options Options) (gen.LoggerBehavior, error) {
 	if err != nil {
 		return nil, err
 	}
-	r.file = file
+	l.file = file
 
-	r.format = "200601021504"
+	l.format = "200601021504"
 
 	if options.Period < time.Minute {
 		options.Period = time.Minute
 	}
 
-	r.switchTime = time.Now().Truncate(options.Period).Add(options.Period)
+	l.switchTime = time.Now().Truncate(options.Period).Add(options.Period)
 
-	r.suffix = ".log"
+	l.suffix = ".log"
 	if options.Compress {
-		r.suffix = ".log.gz"
+		l.suffix = ".log.gz"
 	}
 
-	r.tformat = options.TimeFormat
+	l.tformat = options.TimeFormat
 
 	if options.ShortLevelName {
-		r.levelTrace = "[TRC]"
-		r.levelInfo = "[INF]"
-		r.levelWarning = "[WRN]"
-		r.levelError = "[ERR]"
-		r.levelPanic = "[PNC]"
-		r.levelDebug = "[DBG]"
+		l.levelTrace = "[TRC]"
+		l.levelInfo = "[INF]"
+		l.levelWarning = "[WRN]"
+		l.levelError = "[ERR]"
+		l.levelPanic = "[PNC]"
+		l.levelDebug = "[DBG]"
 
 	} else {
-		r.levelTrace = fmt.Sprintf("[%s]", gen.LogLevelTrace)
-		r.levelInfo = fmt.Sprintf("[%s]", gen.LogLevelInfo)
-		r.levelWarning = fmt.Sprintf("[%s]", gen.LogLevelWarning)
-		r.levelError = fmt.Sprintf("[%s]", gen.LogLevelError)
-		r.levelPanic = fmt.Sprintf("[%s]", gen.LogLevelPanic)
-		r.levelDebug = fmt.Sprintf("[%s]", gen.LogLevelDebug)
+		l.levelTrace = fmt.Sprintf("[%s]", gen.LogLevelTrace)
+		l.levelInfo = fmt.Sprintf("[%s]", gen.LogLevelInfo)
+		l.levelWarning = fmt.Sprintf("[%s]", gen.LogLevelWarning)
+		l.levelError = fmt.Sprintf("[%s]", gen.LogLevelError)
+		l.levelPanic = fmt.Sprintf("[%s]", gen.LogLevelPanic)
+		l.levelDebug = fmt.Sprintf("[%s]", gen.LogLevelDebug)
 	}
 
-	r.queue = lib.NewQueueMPSC()
-	r.options = options
+	l.queue = lib.NewQueueMPSC()
+	l.options = options
 
-	return &r, nil
+	return &l, nil
 }
 
 type Options struct {
@@ -100,7 +100,7 @@ type Options struct {
 	Depth int
 }
 
-type rotate struct {
+type logger struct {
 	queue lib.QueueMPSC
 	depth []string
 
@@ -125,58 +125,58 @@ type rotate struct {
 	state int32 // 0 - wait, 1 - run, 2 - close
 }
 
-func (r *rotate) Log(message gen.MessageLog) {
-	if atomic.LoadInt32(&r.state) == 2 {
+func (l *logger) Log(message gen.MessageLog) {
+	if atomic.LoadInt32(&l.state) == 2 {
 		// terminated
 		return
 	}
-	r.queue.Push(message)
-	if atomic.CompareAndSwapInt32(&r.state, 0, 1) == true {
-		go r.write()
+	l.queue.Push(message)
+	if atomic.CompareAndSwapInt32(&l.state, 0, 1) == true {
+		go l.write()
 	}
 }
 
-func (r *rotate) Terminate() {
-	atomic.StoreInt32(&r.state, 2)
-	r.queue.Push(nil)
-	if atomic.CompareAndSwapInt32(&r.state, 0, 1) == true {
-		go r.write()
+func (l *logger) Terminate() {
+	atomic.StoreInt32(&l.state, 2)
+	l.queue.Push(nil)
+	if atomic.CompareAndSwapInt32(&l.state, 0, 1) == true {
+		go l.write()
 	}
 }
 
-func (r *rotate) write() {
+func (l *logger) write() {
 	var level, t, source string
 
 next:
-	if time.Now().After(r.switchTime) {
-		r.switchFile()
+	if time.Now().After(l.switchTime) {
+		l.switchFile()
 	}
 
 	for {
-		m, ok := r.queue.Pop()
+		m, ok := l.queue.Pop()
 		if ok == false {
 			break
 		}
 		message := m.(gen.MessageLog)
-		if r.tformat == "" {
+		if l.tformat == "" {
 			t = fmt.Sprintf("%d", message.Time.UnixNano())
 		} else {
-			t = message.Time.Format(r.tformat)
+			t = message.Time.Format(l.tformat)
 		}
 
 		switch message.Level {
 		case gen.LogLevelInfo:
-			level = r.levelInfo
+			level = l.levelInfo
 		case gen.LogLevelWarning:
-			level = r.levelWarning
+			level = l.levelWarning
 		case gen.LogLevelError:
-			level = r.levelError
+			level = l.levelError
 		case gen.LogLevelPanic:
-			level = r.levelPanic
+			level = l.levelPanic
 		case gen.LogLevelDebug:
-			level = r.levelDebug
+			level = l.levelDebug
 		case gen.LogLevelTrace:
-			level = r.levelTrace
+			level = l.levelTrace
 		default:
 			level = fmt.Sprintf("[%s]", message.Level)
 		}
@@ -195,41 +195,41 @@ next:
 
 		}
 		msg := fmt.Sprintf(message.Format, message.Args...)
-		fmt.Fprintf(r.file, "%s %s %s: %s\n", t, level, source, msg)
+		fmt.Fprintf(l.file, "%s %s %s: %s\n", t, level, source, msg)
 	}
 
-	if atomic.CompareAndSwapInt32(&r.state, 1, 0) == false {
+	if atomic.CompareAndSwapInt32(&l.state, 1, 0) == false {
 		// terminated
-		r.file.Sync()
-		r.file.Close()
+		l.file.Sync()
+		l.file.Close()
 		return
 	}
 
-	if r.queue.Item() == nil {
+	if l.queue.Item() == nil {
 		return
 	}
 
 	// got some in the queue
-	if atomic.CompareAndSwapInt32(&r.state, 0, 1) == true {
+	if atomic.CompareAndSwapInt32(&l.state, 0, 1) == true {
 		goto next
 	}
 
 	// another goroutine is running
 }
 
-func (r *rotate) switchFile() {
+func (l *logger) switchFile() {
 
-	name := r.options.Prefix + "." + r.switchTime.Add(-r.options.Period).Format(r.format) + r.suffix
+	name := l.options.Prefix + "." + l.switchTime.Add(-l.options.Period).Format(l.format) + l.suffix
 
 	// set the next switch time
-	if r.switchTime.Add(r.options.Period).Before(time.Now()) {
+	if l.switchTime.Add(l.options.Period).Before(time.Now()) {
 		// had no logs longer than the period
-		r.switchTime = time.Now().Truncate(r.options.Period)
+		l.switchTime = time.Now().Truncate(l.options.Period)
 	}
 
-	r.switchTime = r.switchTime.Add(r.options.Period)
+	l.switchTime = l.switchTime.Add(l.options.Period)
 
-	fname := filepath.Join(r.options.Path, name)
+	fname := filepath.Join(l.options.Path, name)
 	out, err := os.Create(fname)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "unable to rotate log file (%s): %s", fname, err)
@@ -237,27 +237,27 @@ func (r *rotate) switchFile() {
 	}
 
 	// copy current file
-	r.file.Sync()
-	r.file.Seek(0, io.SeekStart)
-	if r.options.Compress {
+	l.file.Sync()
+	l.file.Seek(0, io.SeekStart)
+	if l.options.Compress {
 		zout := gzip.NewWriter(out)
-		io.Copy(zout, r.file)
+		io.Copy(zout, l.file)
 		zout.Close()
 	} else {
 		// copy current file
-		io.Copy(out, r.file)
+		io.Copy(out, l.file)
 	}
 	out.Close()
 
 	// truncate it
-	r.file.Truncate(0)
-	r.file.Seek(0, io.SeekStart)
+	l.file.Truncate(0)
+	l.file.Seek(0, io.SeekStart)
 
-	if r.options.Depth > 0 {
-		r.depth = append(r.depth, fname)
-		if len(r.depth) > r.options.Depth {
-			os.Remove(r.depth[0])
-			r.depth = r.depth[1:]
+	if l.options.Depth > 0 {
+		l.depth = append(l.depth, fname)
+		if len(l.depth) > l.options.Depth {
+			os.Remove(l.depth[0])
+			l.depth = l.depth[1:]
 		}
 	}
 }
