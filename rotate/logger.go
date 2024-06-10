@@ -58,6 +58,8 @@ func CreateLogger(options Options) (gen.LoggerBehavior, error) {
 	}
 
 	l.tformat = options.TimeFormat
+	l.queue = lib.NewQueueMPSC()
+	l.options = options
 
 	if options.ShortLevelName {
 		l.levelTrace = "[TRC]"
@@ -67,17 +69,15 @@ func CreateLogger(options Options) (gen.LoggerBehavior, error) {
 		l.levelPanic = "[PNC]"
 		l.levelDebug = "[DBG]"
 
-	} else {
-		l.levelTrace = fmt.Sprintf("[%s]", gen.LogLevelTrace)
-		l.levelInfo = fmt.Sprintf("[%s]", gen.LogLevelInfo)
-		l.levelWarning = fmt.Sprintf("[%s]", gen.LogLevelWarning)
-		l.levelError = fmt.Sprintf("[%s]", gen.LogLevelError)
-		l.levelPanic = fmt.Sprintf("[%s]", gen.LogLevelPanic)
-		l.levelDebug = fmt.Sprintf("[%s]", gen.LogLevelDebug)
+		return &l, nil
 	}
 
-	l.queue = lib.NewQueueMPSC()
-	l.options = options
+	l.levelTrace = fmt.Sprintf("[%s]", gen.LogLevelTrace)
+	l.levelInfo = fmt.Sprintf("[%s]", gen.LogLevelInfo)
+	l.levelWarning = fmt.Sprintf("[%s]", gen.LogLevelWarning)
+	l.levelError = fmt.Sprintf("[%s]", gen.LogLevelError)
+	l.levelPanic = fmt.Sprintf("[%s]", gen.LogLevelPanic)
+	l.levelDebug = fmt.Sprintf("[%s]", gen.LogLevelDebug)
 
 	return &l, nil
 }
@@ -86,6 +86,10 @@ type Options struct {
 	// TimeFormat enables output time in the defined format. See https://pkg.go.dev/time#pkg-constants
 	// Not defined format makes output time as a timestamp in nanoseconds.
 	TimeFormat string
+	// IncludeBehavior includes process/meta behavior to the log message
+	IncludeBehavior bool
+	// IncludeName includes registered process name to the log message
+	IncludeName bool
 	// ShortLevelName enables shortnames for the log levels
 	ShortLevelName bool
 	// Path directory for the log files
@@ -145,7 +149,7 @@ func (l *logger) Terminate() {
 }
 
 func (l *logger) write() {
-	var level, t, source string
+	var level, t, source, name, behavior string
 
 next:
 	if time.Now().After(l.switchTime) {
@@ -187,6 +191,12 @@ next:
 		case gen.MessageLogNetwork:
 			source = fmt.Sprintf("%s-%s", src.Node, src.Peer)
 		case gen.MessageLogProcess:
+			if l.options.IncludeBehavior {
+				behavior = " " + src.Behavior
+			}
+			if l.options.IncludeName && src.Name != "" {
+				name = " " + src.Name.String()
+			}
 			source = src.PID.String()
 		case gen.MessageLogMeta:
 			source = src.Meta.String()
@@ -195,7 +205,7 @@ next:
 
 		}
 		msg := fmt.Sprintf(message.Format, message.Args...)
-		fmt.Fprintf(l.file, "%s %s %s: %s\n", t, level, source, msg)
+		fmt.Fprintf(l.file, "%s %s %s%s%s: %s\n", t, level, source, name, behavior, msg)
 	}
 
 	if atomic.CompareAndSwapInt32(&l.state, 1, 0) == false {

@@ -43,6 +43,9 @@ func CreateLogger(options Options) (gen.LoggerBehavior, error) {
 	c.levelPanic = color.New(color.FgWhite, color.BgRed, color.Bold).Sprintf("[%s]", gen.LogLevelPanic)
 	c.levelDebug = color.MagentaString("[%s]", gen.LogLevelDebug)
 
+	c.includeBehavior = options.IncludeBehavior
+	c.includeName = options.IncludeName
+
 	return &c, nil
 }
 
@@ -50,13 +53,19 @@ type Options struct {
 	// TimeFormat enables output time in the defined format. See https://pkg.go.dev/time#pkg-constants
 	// Not defined format makes output time as a timestamp in nanoseconds.
 	TimeFormat string
+	// IncludeBehavior includes process/meta behavior to the log message
+	IncludeBehavior bool
+	// IncludeName includes registered process name to the log message
+	IncludeName bool
 	// ShortLevelName enables shortnames for the log levels
 	ShortLevelName bool
 }
 
 type logger struct {
-	out    io.Writer
-	format string
+	out             io.Writer
+	format          string
+	includeBehavior bool
+	includeName     bool
 
 	levelTrace   string
 	levelInfo    string
@@ -67,7 +76,7 @@ type logger struct {
 }
 
 func (l *logger) Log(message gen.MessageLog) {
-	var level, t, source string
+	var level, t, source, name, behavior string
 
 	if l.format == "" {
 		t = fmt.Sprintf("%d", message.Time.UnixNano())
@@ -81,9 +90,18 @@ func (l *logger) Log(message gen.MessageLog) {
 	case gen.MessageLogNetwork:
 		source = color.GreenString("%s-%s", src.Node.CRC32(), src.Peer.CRC32())
 	case gen.MessageLogProcess:
-		source = color.GreenString("%s", src.PID)
+		if l.includeBehavior {
+			behavior = " " + src.Behavior
+		}
+		if l.includeName && src.Name != "" {
+			name = " " + color.GreenString(src.Name.String())
+		}
+		source = fmt.Sprintf("%s%s%s", color.BlueString("%s", src.PID), name, behavior)
 	case gen.MessageLogMeta:
-		source = color.GreenString("%s", src.Meta)
+		if l.includeBehavior {
+			behavior = " " + src.Behavior
+		}
+		source = fmt.Sprintf("%s%s%s", color.BlueString("%s", src.Meta), name, behavior)
 	default:
 		panic(fmt.Sprintf("unknown log source type: %#v", message.Source))
 	}
