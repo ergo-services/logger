@@ -101,7 +101,7 @@ func (l *logger) Log(message gen.MessageLog) {
 		if l.includeBehavior {
 			behavior = " " + src.Behavior
 		}
-		source = fmt.Sprintf("%s%s%s", color.BlueString("%s", src.Meta), name, behavior)
+		source = fmt.Sprintf("%s%s%s", color.CyanString("%s", src.Meta), name, behavior)
 	default:
 		panic(fmt.Sprintf("unknown log source type: %#v", message.Source))
 	}
