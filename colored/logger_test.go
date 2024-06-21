@@ -8,7 +8,7 @@ import (
 	"ergo.services/ergo/gen"
 )
 
-func TestColored(t *testing.T) {
+func TestColoredFull(t *testing.T) {
 	node := gen.Atom("test@localhost")
 	peer := gen.Atom("peer@localhost")
 	copt := Options{
@@ -21,8 +21,8 @@ func TestColored(t *testing.T) {
 	}
 	mln.Args = append(mln.Args, gen.PID{Node: node, ID: 1234})
 	mln.Args = append(mln.Args, gen.ProcessID{Name: "example", Node: node})
-	mln.Args = append(mln.Args, gen.Ref{Node: node, ID: [3]uint32{1234, 5678, 9101}})
-	mln.Args = append(mln.Args, gen.Alias{Node: node, ID: [3]uint32{1234, 5678, 9101}})
+	mln.Args = append(mln.Args, gen.Ref{Node: node, ID: [3]uint64{1234, 5678, 9101}})
+	mln.Args = append(mln.Args, gen.Alias{Node: node, ID: [3]uint64{1234, 5678, 9101}})
 	mln.Args = append(mln.Args, gen.Event{Name: "example", Node: node})
 	mln.Args = append(mln.Args, gen.Atom("test atom"))
 
@@ -41,7 +41,7 @@ func TestColored(t *testing.T) {
 	}
 	sourceMeta := gen.MessageLogMeta{
 		Parent: gen.PID{Node: node, ID: 45678},
-		Meta:   gen.Alias{Node: node, ID: [3]uint32{1234, 5678, 9101}},
+		Meta:   gen.Alias{Node: node, ID: [3]uint64{1234, 5678, 9101}},
 	}
 	sourceNode := gen.MessageLogNode{
 		Node:     node,
@@ -64,7 +64,7 @@ func TestColored(t *testing.T) {
 	}
 }
 
-func TestColoredInNode(t *testing.T) {
+func TestColoredQuick(t *testing.T) {
 	nopt := gen.NodeOptions{}
 	nopt.Log.DefaultLogger.Disable = true
 	nopt.Log.Level = gen.LogLevelDebug

@@ -3,7 +3,7 @@ module ergo.services/logger
 go 1.20
 
 require (
-	ergo.services/ergo v1.999.225-0.20240606191206-1e15b2a6774b
+	ergo.services/ergo v1.999.225-0.20240621104521-5ac08d433155
 	github.com/fatih/color v1.16.0
 )
 
