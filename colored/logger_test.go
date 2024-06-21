@@ -5,7 +5,9 @@ import (
 	"time"
 
 	"ergo.services/ergo"
+	"ergo.services/ergo/act"
 	"ergo.services/ergo/gen"
+	"ergo.services/ergo/lib"
 )
 
 func TestColoredFull(t *testing.T) {
@@ -68,8 +70,15 @@ func TestColoredQuick(t *testing.T) {
 	nopt := gen.NodeOptions{}
 	nopt.Log.DefaultLogger.Disable = true
 	nopt.Log.Level = gen.LogLevelDebug
+	nopt.Network.Mode = gen.NetworkModeHidden
+	nopt.Network.Cookie = lib.RandomString(10)
 
-	l, _ := CreateLogger(Options{TimeFormat: time.DateTime})
+	loggerOptions := Options{
+		TimeFormat:      time.DateTime,
+		IncludeBehavior: true,
+		IncludeName:     true,
+	}
+	l, _ := CreateLogger(loggerOptions)
 	logger := gen.Logger{
 		Name:   "colored",
 		Logger: l,
@@ -84,5 +93,27 @@ func TestColoredQuick(t *testing.T) {
 	node.Log().Warning("example Ref %s", node.MakeRef())
 	node.Log().Debug("example debug message. node virtual core PID %s", node.PID())
 	node.Log().Panic("example panic message")
-	node.Stop()
+	node.SpawnRegister("example", quick_factory, gen.ProcessOptions{})
+	node.Wait()
+}
+
+func quick_factory() gen.ProcessBehavior {
+	return &quick{}
+}
+
+type quick struct {
+	act.Actor
+}
+
+func (q *quick) Init(args ...any) error {
+	q.Log().Info("process started")
+	q.Send(q.PID(), "")
+	return nil
+}
+
+func (q *quick) HandleMessage(from gen.PID, message any) error {
+	q.Log().Debug("example %s message", gen.Atom("debug"))
+	q.Log().Panic("example %s message", gen.Atom("panic"))
+	go q.Node().Stop()
+	return nil
 }
