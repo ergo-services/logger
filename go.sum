@@ -1,5 +1,5 @@
-ergo.services/ergo v1.999.225-0.20240621104521-5ac08d433155 h1:eb7TN3DUNPfWczdYW0BUVnWbYDqGrGp0rmZfGdQ+oLQ=
-ergo.services/ergo v1.999.225-0.20240621104521-5ac08d433155/go.mod h1:bLQ6PoO6Mz/8gVuzvPv3xfMfo1P9w6rZV1WnMXMeMdg=
+ergo.services/ergo v1.999.225-0.20240625165509-eaa647096b85 h1:NU+mTqEQ9VvD99bIM78/LJY2eYSy315nfsIKgU3JcPs=
+ergo.services/ergo v1.999.225-0.20240625165509-eaa647096b85/go.mod h1:bLQ6PoO6Mz/8gVuzvPv3xfMfo1P9w6rZV1WnMXMeMdg=
 github.com/fatih/color v1.16.0 h1:zmkK9Ngbjj+K0yRhTVONQh1p/HknKYSlNT+vZCzyokM=
 github.com/fatih/color v1.16.0/go.mod h1:fL2Sau1YI5c0pdGEVCbKQbLXB6edEj1ZgiY4NijnWvE=
 github.com/mattn/go-colorable v0.1.13 h1:fFA4WZxdEF4tXPZVKMLwD8oUnCTTo08duU7wxecdEvA=
