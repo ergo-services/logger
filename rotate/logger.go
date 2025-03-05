@@ -158,7 +158,7 @@ next:
 
 	for {
 		m, ok := l.queue.Pop()
-		if ok == false {
+		if !ok || m == nil {
 			break
 		}
 		message := m.(gen.MessageLog)
