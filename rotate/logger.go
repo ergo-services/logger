@@ -141,9 +141,8 @@ func (l *logger) Log(message gen.MessageLog) {
 }
 
 func (l *logger) Terminate() {
-	atomic.StoreInt32(&l.state, 2)
-	l.queue.Push(nil)
-	if atomic.CompareAndSwapInt32(&l.state, 0, 1) == true {
+	if prev := atomic.SwapInt32(&l.state, 2); prev == 0 {
+		//handle the queue in case something is left there
 		go l.write()
 	}
 }
