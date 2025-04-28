@@ -45,6 +45,7 @@ func CreateLogger(options Options) (gen.LoggerBehavior, error) {
 
 	c.includeBehavior = options.IncludeBehavior
 	c.includeName = options.IncludeName
+	c.includeFields = options.IncludeFields
 
 	return &c, nil
 }
@@ -57,6 +58,8 @@ type Options struct {
 	IncludeBehavior bool
 	// IncludeName includes registered process name to the log message
 	IncludeName bool
+	// IncludeFields includes associated fields to the log message
+	IncludeFields bool
 	// ShortLevelName enables shortnames for the log levels
 	ShortLevelName bool
 }
@@ -66,6 +69,7 @@ type logger struct {
 	format          string
 	includeBehavior bool
 	includeName     bool
+	includeFields   bool
 
 	levelTrace   string
 	levelInfo    string
@@ -104,6 +108,11 @@ func (l *logger) Log(message gen.MessageLog) {
 		source = fmt.Sprintf("%s%s%s", color.CyanString("%s", src.Meta), name, behavior)
 	default:
 		panic(fmt.Sprintf("unknown log source type: %#v", message.Source))
+	}
+
+	if l.includeFields && len(message.Fields) > 0 {
+		message.Format += "\n\tfields%s"
+		message.Args = append(message.Args, message.Fields)
 	}
 
 	switch message.Level {
