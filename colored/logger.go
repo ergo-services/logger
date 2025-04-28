@@ -3,6 +3,7 @@ package colored
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"ergo.services/ergo/gen"
 	"github.com/fatih/color"
@@ -111,8 +112,9 @@ func (l *logger) Log(message gen.MessageLog) {
 	}
 
 	if l.includeFields && len(message.Fields) > 0 {
-		message.Format += "\n\tfields%s"
-		message.Args = append(message.Args, message.Fields)
+		space := strings.Repeat(" ", len(t)-6)
+		lf := colorFaint.Sprintf("\n%sfields %s", space, message.Fields)
+		message.Format += lf
 	}
 
 	switch message.Level {
