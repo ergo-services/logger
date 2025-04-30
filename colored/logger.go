@@ -25,6 +25,9 @@ func CreateLogger(options Options) (gen.LoggerBehavior, error) {
 	var c logger
 
 	c.format = options.TimeFormat
+	c.includeBehavior = options.IncludeBehavior
+	c.includeName = options.IncludeName
+	c.includeFields = options.IncludeFields
 
 	if options.ShortLevelName {
 		c.levelTrace = "[TRC]"
@@ -43,10 +46,6 @@ func CreateLogger(options Options) (gen.LoggerBehavior, error) {
 	c.levelError = color.New(color.FgRed, color.Bold).Sprintf("[%s]", gen.LogLevelError)
 	c.levelPanic = color.New(color.FgWhite, color.BgRed, color.Bold).Sprintf("[%s]", gen.LogLevelPanic)
 	c.levelDebug = color.MagentaString("[%s]", gen.LogLevelDebug)
-
-	c.includeBehavior = options.IncludeBehavior
-	c.includeName = options.IncludeName
-	c.includeFields = options.IncludeFields
 
 	return &c, nil
 }
