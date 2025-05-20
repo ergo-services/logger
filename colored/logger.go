@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"ergo.services/ergo/gen"
 	"github.com/fatih/color"
@@ -47,6 +48,21 @@ func CreateLogger(options Options) (gen.LoggerBehavior, error) {
 	c.levelPanic = color.New(color.FgWhite, color.BgRed, color.Bold).Sprintf("[%s]", gen.LogLevelPanic)
 	c.levelDebug = color.MagentaString("[%s]", gen.LogLevelDebug)
 
+	var t string
+	if c.format == "" {
+		t = fmt.Sprintf("%d", time.Now().UnixNano())
+	} else {
+		t = time.Now().Format(c.format)
+	}
+
+	if options.DisableBanner {
+		return &c, nil
+	}
+
+	for _, l := range banner {
+		fmt.Printf("%s %s\n", colorFaint.Sprintf("%s", t), l)
+	}
+
 	return &c, nil
 }
 
@@ -62,6 +78,8 @@ type Options struct {
 	IncludeFields bool
 	// ShortLevelName enables shortnames for the log levels
 	ShortLevelName bool
+	// DisableBanner disables Ergo logo on start
+	DisableBanner bool
 }
 
 type logger struct {

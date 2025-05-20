@@ -81,6 +81,7 @@ func TestColoredNode(t *testing.T) {
 		IncludeBehavior: true,
 		IncludeName:     true,
 		IncludeFields:   true,
+		// DisableBanner:   true,
 	}
 	l, _ := CreateLogger(loggerOptions)
 	logger := gen.Logger{
