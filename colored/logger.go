@@ -3,6 +3,8 @@ package colored
 import (
 	"fmt"
 	"io"
+	"strings"
+	"time"
 
 	"ergo.services/ergo/gen"
 	"github.com/fatih/color"
@@ -24,6 +26,9 @@ func CreateLogger(options Options) (gen.LoggerBehavior, error) {
 	var c logger
 
 	c.format = options.TimeFormat
+	c.includeBehavior = options.IncludeBehavior
+	c.includeName = options.IncludeName
+	c.includeFields = options.IncludeFields
 
 	if options.ShortLevelName {
 		c.levelTrace = "[TRC]"
@@ -43,8 +48,20 @@ func CreateLogger(options Options) (gen.LoggerBehavior, error) {
 	c.levelPanic = color.New(color.FgWhite, color.BgRed, color.Bold).Sprintf("[%s]", gen.LogLevelPanic)
 	c.levelDebug = color.MagentaString("[%s]", gen.LogLevelDebug)
 
-	c.includeBehavior = options.IncludeBehavior
-	c.includeName = options.IncludeName
+	var t string
+	if c.format == "" {
+		t = fmt.Sprintf("%d", time.Now().UnixNano())
+	} else {
+		t = time.Now().Format(c.format)
+	}
+
+	if options.DisableBanner {
+		return &c, nil
+	}
+
+	for _, l := range banner {
+		fmt.Printf("%s %s\n", colorFaint.Sprintf("%s", t), l)
+	}
 
 	return &c, nil
 }
@@ -57,8 +74,12 @@ type Options struct {
 	IncludeBehavior bool
 	// IncludeName includes registered process name to the log message
 	IncludeName bool
+	// IncludeFields includes associated fields to the log message
+	IncludeFields bool
 	// ShortLevelName enables shortnames for the log levels
 	ShortLevelName bool
+	// DisableBanner disables Ergo logo on start
+	DisableBanner bool
 }
 
 type logger struct {
@@ -66,6 +87,7 @@ type logger struct {
 	format          string
 	includeBehavior bool
 	includeName     bool
+	includeFields   bool
 
 	levelTrace   string
 	levelInfo    string
@@ -104,6 +126,12 @@ func (l *logger) Log(message gen.MessageLog) {
 		source = fmt.Sprintf("%s%s%s", color.CyanString("%s", src.Meta), name, behavior)
 	default:
 		panic(fmt.Sprintf("unknown log source type: %#v", message.Source))
+	}
+
+	if l.includeFields && len(message.Fields) > 0 {
+		space := strings.Repeat(" ", len(t)-6)
+		lf := colorFaint.Sprintf("\n%sfields %s", space, message.Fields)
+		message.Format += lf
 	}
 
 	switch message.Level {

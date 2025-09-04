@@ -10,16 +10,19 @@ import (
 	"ergo.services/ergo/lib"
 )
 
-func TestColoredFull(t *testing.T) {
+func TestColoredQuick(t *testing.T) {
 	node := gen.Atom("test@localhost")
 	peer := gen.Atom("peer@localhost")
 	copt := Options{
 		TimeFormat:     time.DateTime,
 		ShortLevelName: true,
+		IncludeFields:  true,
 	}
 	c, _ := CreateLogger(copt)
+	fields := []gen.LogField{{Name: "abc", Value: "123"}, {Name: "def", Value: 1.23}}
 	mln := gen.MessageLog{
 		Format: "PID %s ProcessID %s Ref %s Alias %s Event %s Atom %s",
+		Fields: fields,
 	}
 	mln.Args = append(mln.Args, gen.PID{Node: node, ID: 1234})
 	mln.Args = append(mln.Args, gen.ProcessID{Name: "example", Node: node})
@@ -66,7 +69,7 @@ func TestColoredFull(t *testing.T) {
 	}
 }
 
-func TestColoredQuick(t *testing.T) {
+func TestColoredNode(t *testing.T) {
 	nopt := gen.NodeOptions{}
 	nopt.Log.DefaultLogger.Disable = true
 	nopt.Log.Level = gen.LogLevelDebug
@@ -77,6 +80,8 @@ func TestColoredQuick(t *testing.T) {
 		TimeFormat:      time.DateTime,
 		IncludeBehavior: true,
 		IncludeName:     true,
+		IncludeFields:   true,
+		// DisableBanner:   true,
 	}
 	l, _ := CreateLogger(loggerOptions)
 	logger := gen.Logger{
@@ -89,6 +94,9 @@ func TestColoredQuick(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+
+	fields := []gen.LogField{{Name: "abc", Value: "123"}, {Name: "def", Value: 1.23}}
+	node.Log().AddFields(fields...)
 	node.Log().Info("node started")
 	node.Log().Warning("example Ref %s", node.MakeRef())
 	node.Log().Debug("example debug message. node virtual core PID %s", node.PID())
@@ -106,6 +114,8 @@ type quick struct {
 }
 
 func (q *quick) Init(args ...any) error {
+	fields := []gen.LogField{{Name: "cba", Value: "321"}, {Name: "fed", Value: 3.21}}
+	q.Log().AddFields(fields...)
 	q.Log().Info("process started")
 	q.Send(q.PID(), "")
 	return nil
