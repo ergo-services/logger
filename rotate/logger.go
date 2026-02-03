@@ -90,6 +90,8 @@ type Options struct {
 	IncludeBehavior bool
 	// IncludeName includes registered process name to the log message
 	IncludeName bool
+	// IncludeFields includes associated fields to the log message
+	IncludeFields bool
 	// ShortLevelName enables shortnames for the log levels
 	ShortLevelName bool
 	// Path directory for the log files
@@ -160,6 +162,10 @@ next:
 		if ok == false {
 			break
 		}
+
+		name = ""
+		behavior = ""
+
 		message := m.(gen.MessageLog)
 		if l.tformat == "" {
 			t = fmt.Sprintf("%d", message.Time.UnixNano())
@@ -198,13 +204,21 @@ next:
 			}
 			source = src.PID.String()
 		case gen.MessageLogMeta:
+			if l.options.IncludeBehavior {
+				behavior = " " + src.Behavior
+			}
 			source = src.Meta.String()
 		default:
 			panic(fmt.Sprintf("unknown log source type: %#v", message.Source))
 
 		}
+
 		msg := fmt.Sprintf(message.Format, message.Args...)
-		fmt.Fprintf(l.file, "%s %s %s%s%s: %s\n", t, level, source, name, behavior, msg)
+		if l.options.IncludeFields && len(message.Fields) > 0 {
+			fmt.Fprintf(l.file, "%s %s %s%s%s: %s %s\n", t, level, source, name, behavior, msg, message.Fields)
+		} else {
+			fmt.Fprintf(l.file, "%s %s %s%s%s: %s\n", t, level, source, name, behavior, msg)
+		}
 	}
 
 	if atomic.CompareAndSwapInt32(&l.state, 1, 0) == false {
@@ -241,7 +255,7 @@ func (l *logger) switchFile() {
 	fname := filepath.Join(l.options.Path, name)
 	out, err := os.Create(fname)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "unable to rotate log file (%s): %s", fname, err)
+		fmt.Fprintf(os.Stderr, "unable to rotate log file (%s): %s\n", fname, err)
 		return
 	}
 
