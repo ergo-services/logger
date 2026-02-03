@@ -2,7 +2,6 @@ package colored
 
 import (
 	"fmt"
-	"io"
 	"strings"
 	"time"
 
@@ -83,7 +82,6 @@ type Options struct {
 }
 
 type logger struct {
-	out             io.Writer
 	format          string
 	includeBehavior bool
 	includeName     bool
@@ -123,13 +121,17 @@ func (l *logger) Log(message gen.MessageLog) {
 		if l.includeBehavior {
 			behavior = " " + src.Behavior
 		}
-		source = fmt.Sprintf("%s%s%s", color.CyanString("%s", src.Meta), name, behavior)
+		source = fmt.Sprintf("%s%s", color.CyanString("%s", src.Meta), behavior)
 	default:
 		panic(fmt.Sprintf("unknown log source type: %#v", message.Source))
 	}
 
 	if l.includeFields && len(message.Fields) > 0 {
-		space := strings.Repeat(" ", len(t)-6)
+		padding := len(t) - 6
+		if padding < 0 {
+			padding = 0
+		}
+		space := strings.Repeat(" ", padding)
 		lf := colorFaint.Sprintf("\n%sfields %s", space, message.Fields)
 		message.Format += lf
 	}
