@@ -21,3 +21,10 @@ This logger writes log messages to the file and makes a rotation of them.
 
 Doc: https://docs.ergo.services/extra-library/loggers/rotate
 
+## sentry
+Forwards Ergo panics and errors to a Sentry project with full panic-origin stack traces. Captures every `LogLevelPanic` from any source (node, network, application, meta, process) and `LogLevelError` from node, network and application by default. Error events from meta processes and processes are opt-in.
+
+Stack traces are captured synchronously inside the framework's recover defer, so the frames point at the line that actually panicked rather than at the recovery wrapper. Events are queued through `lib.QueueMPSC` with a hard cap and shipped by a single consumer goroutine; `sentry-go`'s own transport handles batching to Sentry.
+
+Doc: https://docs.ergo.services/extra-library/loggers/sentry
+
