@@ -122,6 +122,11 @@ func (l *logger) Log(message gen.MessageLog) {
 			behavior = " " + src.Behavior
 		}
 		source = fmt.Sprintf("%s%s", color.CyanString("%s", src.Meta), behavior)
+	case gen.MessageLogApplication:
+		if l.includeBehavior {
+			behavior = " " + src.Behavior
+		}
+		source = color.GreenString("App#<%s.'%s'>", src.Node.CRC32(), string(src.Name)) + behavior
 	default:
 		panic(fmt.Sprintf("unknown log source type: %#v", message.Source))
 	}
