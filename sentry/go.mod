@@ -3,7 +3,7 @@ module ergo.services/logger/sentry
 go 1.23
 
 require (
-	ergo.services/ergo v1.999.321-0.20260512224028-1517f213feec
+	ergo.services/ergo v1.999.321-0.20260518141628-c18fb8833b5a
 	github.com/getsentry/sentry-go v0.36.0
 )
 
