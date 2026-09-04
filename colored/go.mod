@@ -1,9 +1,9 @@
 module ergo.services/logger/colored
 
-go 1.20
+go 1.21
 
 require (
-	ergo.services/ergo v1.999.320
+	ergo.services/ergo v1.999.330
 	github.com/fatih/color v1.18.0
 )
 

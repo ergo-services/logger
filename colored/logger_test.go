@@ -57,7 +57,13 @@ func TestColoredQuick(t *testing.T) {
 		Peer:     peer,
 		Creation: 345,
 	}
-	sources := []any{sourcePID, sourceMeta, sourceNode, sourceNetwork}
+	sourceApp := gen.MessageLogApplication{
+		Node:     node,
+		Name:     "example_app",
+		Mode:     gen.ApplicationModePermanent,
+		Behavior: "ergo.services/ergo/act.Application",
+	}
+	sources := []any{sourcePID, sourceMeta, sourceNode, sourceNetwork, sourceApp}
 
 	for _, lev := range levels {
 		for _, src := range sources {

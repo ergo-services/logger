@@ -208,6 +208,11 @@ next:
 				behavior = " " + src.Behavior
 			}
 			source = src.Meta.String()
+		case gen.MessageLogApplication:
+			if l.options.IncludeBehavior {
+				behavior = " " + src.Behavior
+			}
+			source = fmt.Sprintf("App#<%s.'%s'>", src.Node.CRC32(), string(src.Name))
 		default:
 			panic(fmt.Sprintf("unknown log source type: %#v", message.Source))
 
